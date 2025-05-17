@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Study Tracker</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* Reset & base */
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+        Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+      margin: 40px auto;
+      max-width: 700px;
+      background: #fafafa;
+      color: #1d1d1f;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* Titles */
+    h1 {
+      font-weight: 600;
+      font-size: 2.5rem;
+      margin-bottom: 24px;
+      color: #000;
+      letter-spacing: -0.02em;
+    }
+
+    h2 {
+      font-weight: 600;
+      font-size: 1.5rem;
+      margin-bottom: 16px;
+      color: #1d1d1f;
+      border-bottom: 1px solid #d2d2d7;
+      padding-bottom: 8px;
+    }
+
+    /* Sections */
+    .section {
+      background: #fff;
+      padding: 20px 30px;
+      margin-bottom: 30px;
+      border-radius: 16px;
+      box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+      transition: box-shadow 0.3s ease;
+    }
+
+    .section:hover {
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    }
+
+    /* Inputs and buttons */
+    input[type="text"],
+    input[type="date"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 12px 15px;
+      font-size: 16px;
+      border: 1.5px solid #d2d2d7;
+      border-radius: 12px;
+      background: #f9f9f9;
+      color: #1d1d1f;
+      transition: border-color 0.3s ease;
+      font-weight: 400;
+      outline-offset: 2px;
+      outline-color: transparent;
+    }
+
+    input[type="text"]:focus,
+    input[type="date"]:focus,
+    select:focus,
+    textarea:focus {
+      border-color: #4a90e2;
+      background: #fff;
+      outline-color: #4a90e2;
+      outline-style: solid;
+      outline-width: 2px;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 60px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+        Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+    }
+
+    /* Buttons */
+    button {
+      cursor: pointer;
+      background: #4a90e2;
+      border: none;
+      color: white;
+      font-weight: 600;
+      padding: 12px 28px;
+      font-size: 16px;
+      border-radius: 16px;
+      margin-top: 8px;
+      box-shadow: 0 4px 12px rgba(74, 144, 226, 0.4);
+      transition: background 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    button:hover {
+      background: #3a78c2;
+      box-shadow: 0 6px 18px rgba(58, 120, 194, 0.6);
+    }
+
+    button:active {
+      background: #2c5ea3;
+      box-shadow: 0 2px 8px rgba(44, 94, 163, 0.7);
+    }
+
+    button:disabled {
+      background: #c7c7cc;
+      cursor: default;
+      box-shadow: none;
+    }
+
+    /* Goal items */
+    .goal-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      background: #f2f2f7;
+      border-radius: 12px;
+      margin-bottom: 10px;
+      font-size: 16px;
+      color: #1d1d1f;
+      user-select: none;
+    }
+
+    .goal-item input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+    }
+
+    .goal-item span {
+      flex-grow: 1;
+    }
+
+    .goal-item input[type="checkbox"]:checked + span {
+      color: #8e8e93;
+      text-decoration: line-through;
+    }
+
+    /* D-Day */
+    #ddayCount {
+      font-weight: 600;
+      font-size: 1.25rem;
+      color: #4a90e2;
+      margin-left: 5px;
+    }
+
+    /* Timer display */
+    #currentTimer, #focusTimer {
+      font-weight: 700;
+      font-size: 1.8rem;
+      color: #1d1d1f;
+      letter-spacing: 0.05em;
+      margin-top: 12px;
+    }
+
+    /* Stats */
+    #subjectTimes p {
+      font-weight: 500;
+      font-size: 16px;
+      margin: 8px 0;
+      color: #3a3a3c;
+    }
+
+    /* Focus Mode overlay */
+    #focusOverlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #f2f2f7;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      z-index: 9999;
+      gap: 24px;
+      font-weight: 600;
+      color: #1d1d1f;
+      padding: 40px;
+      text-align: center;
+    }
+
+    #focusOverlay h2 {
+      font-size: 2.25rem;
+      margin-bottom: 0;
+    }
+
+    #focusOverlay button {
+      background: #4a90e2;
+      padding: 16px 40px;
+      font-size: 20px;
+      border-radius: 24px;
+      box-shadow: 0 8px 20px rgba(74,144,226,0.5);
+      font-weight: 700;
+    }
+
+    #focusOverlay button:hover {
+      background: #3a78c2;
+      box-shadow: 0 10px 30px rgba(58,120,194,0.7);
+    }
+
+  </style>
+</head>
+<body>
+  <h1>📚 Study Tracker</h1>
+
+  <div class="section">
+    <h2>📆 D-Day 설정</h2>
+    <input type="date" id="ddayInput">
+    <p>D-Day까지 남은 일수: <span id="ddayCount">-</span></p>
+  </div>
+
+  <div class="section">
+    <h2>1. Subject & Timer</h2>
+    <select id="subjectSelect" onchange="renderGoals()"></select>
+    <button onclick="startTimer()">Start</button>
+    <button onclick="stopTimer()">Stop</button>
+    <p>Current Session: <span id="currentTimer">00:00:00</span></p>
+    <div style="margin-top: 20px; border-top: 1px solid #d2d2d7; padding-top: 15px;">
+      <p>Today's Total: <span id="todayTotal">0 min</span></p>
+      <div id="subjectTimes"></div>
+      <div style="width: 300px; height: 300px; margin: auto;">
+        <canvas id="barChart"></canvas>
+      </div>
+    </div>
+
+    <input type="text" id="newSubject" placeholder="New Subject" style="margin-top: 25px;">
+    <button onclick="addSubject()">Add Subject</button>
+    <button onclick="removeSubject()">Remove Selected</button>
+
+  </div>
+
+  <div class="section">
+    <h2>2. Add Study Goal (Subject-Specific)</h2>
+    <textarea id="goalInput" rows="2" cols="30" placeholder="e.g. Finish 3 math problems"></textarea><br>
+    <button onclick="addGoal()">Add Goal</button>
+    <div id="goalList"></div>
+  </div>
+
+  <div class="section">
+    <h2>4. 집중 모드</h2>
+    <button onclick="toggleFocusMode(true)">Enter Focus Mode</button>
+  </div>
+
+  <div id="focusOverlay">
+    <h2>📵 집중 모드 - 현재 과목: <span id="focusSubject"></span></h2>
+    <p>Session: <span id="focusTimer">00:00:00</span></p>
+    <button onclick="toggleFocusMode(false)">Exit</button>
+  </div>
+
+  <script>
+    let startTime = null;
+    let timerInterval = null;
+    let focusTimerInterval = null;
+
+    const subjects = JSON.parse(localStorage.getItem('subjects') || '["Korean", "Math", "English"]');
+    const times = JSON.parse(localStorage.getItem('times') || '{}');
+    const goals = JSON.parse(localStorage.getItem('goals') || '{}');
+    const dday = localStorage.getItem('dday');
+
+    function saveData() {
+      localStorage.setItem('subjects', JSON.stringify(subjects));
+      localStorage.setItem('times', JSON.stringify(times));
+      localStorage.setItem('goals', JSON.stringify(goals));
+    }
+
+    function updateSubjectSelect() {
+      const select = document.getElementById('subjectSelect');
+      select.innerHTML = '';
+      subjects.forEach(sub => {
+        const option = document.createElement('option');
+        option.value = sub;
+        option.textContent = sub;
+        select.appendChild(option);
+      });
+    }
+
+    function updateTimerDisplay(ms, targetId) {
+      const sec = Math.floor(ms / 1000);
+      const hrs = String(Math.floor(sec / 3600)).padStart(2, '0');
+      const min = String(Math.floor((sec % 3600) / 60)).padStart(2, '0');
+      const s = String(sec % 60).padStart(2, '0');
+      document.getElementById(targetId).textContent = `${hrs}:${min}:${s}`;
+    }
+
+    function startTimer() {
+      if (timerInterval) return;
+      startTime = Date.now();
+      timerInterval = setInterval(() => {
+        updateTimerDisplay(Date.now() - startTime, 'currentTimer');
+        updateTimerDisplay(Date.now() - startTime, 'focusTimer');
+      }, 1000);
+    }
+
+    function stopTimer() {
+      if (!timerInterval) return;
+      clearInterval(timerInterval);
+      const elapsed = Date.now() - startTime;
+      const subject = document.getElementById('subjectSelect').value;
+      times[subject] = (times[subject] || 0) + Math.floor(elapsed / 60000);
+      saveData();
+      startTime = null;
+      timerInterval = null;
+      updateTimerDisplay(0, 'currentTimer');
+      updateStats();
+    }
+
+    function addGoal() {
+      const text = document.getElementById('goalInput').value.trim();
+      const subject = document.getElementById('subjectSelect').value;
+      if (!text) return;
+      if (!goals[subject]) goals[subject] = [];
+      goals[subject].push({ text, done: false });
+      saveData();
+      document.getElementById('goalInput').value = '';
+      renderGoals();
+    }
+
+    function toggleGoal(subject, index) {
+      goals[subject][index].done = !goals[subject][index].done;
+      saveData();
+      renderGoals();
+    }
+
+    function renderGoals() {
+      const subject = document.getElementById('subjectSelect').value;
+      const container = document.getElementById('goalList');
+      container.innerHTML = '';
+      if (!goals[subject]) return;
+      goals[subject].forEach((g, i) => {
+        const div = document.createElement('div');
+        div.className = 'goal-item';
+        const chk = document.createElement('input');
+        chk.type = 'checkbox';
+        chk.checked = g.done;
+        chk.onclick = () => toggleGoal(subject, i);
+        const span = document.createElement('span');
+        span.textContent = g.text + (g.done ? ' ✅' : '');
+        div.appendChild(chk);
+        div.appendChild(span);
+        container.appendChild(div);
+      });
+    }
+
+    function updateStats() {
+      const todayTotal = Object.values(times).reduce((a, b) => a + b, 0);
+      document.getElementById('todayTotal').textContent = todayTotal + ' min';
+      const subjContainer = document.getElementById('subjectTimes');
+      subjContainer.innerHTML = '';
+      for (let subj of subjects) {
+        const p = document.createElement('p');
+        p.textContent = `${subj}: ${times[subj] || 0} min`;
+        subjContainer.appendChild(p);
+      }
+      renderChart();
+    }
+
+    function renderChart() {
+      const ctx = document.getElementById('barChart').getContext('2d');
+      if (window.studyChart) window.studyChart.destroy();
+      window.studyChart = new Chart(ctx, {
+        type: 'doughnut',  // 막대그래프 → 도넛형으로 변경
+        data: {
+          labels: subjects,
+          datasets: [{
+            label: 'Study Time (min)',
+            data: subjects.map(s => times[s] || 0),
+            backgroundColor: [
+              '#4CAF50',
+              '#2196F3',
+              '#FFC107',
+              '#E91E63',
+              '#9C27B0',
+              '#00BCD4',
+              '#8BC34A',
+              '#FF5722'
+            ],
+            borderWidth: 1,
+            borderColor: '#fff',
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '60%',  // 도넛 두께 설정 (0%는 원형, 100%는 빈 원)
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                color: '#333',
+                font: {
+                  size: 12
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function addSubject() {
+      const newSub = document.getElementById('newSubject').value.trim();
+      if (newSub && !subjects.includes(newSub)) {
+        subjects.push(newSub);
+        times[newSub] = 0;
+        goals[newSub] = [];
+        saveData();
+        updateSubjectSelect();
+        updateStats();
+        document.getElementById('newSubject').value = '';
+      }
+    }
+
+    function removeSubject() {
+      const sub = document.getElementById('subjectSelect').value;
+      const index = subjects.indexOf(sub);
+      if (index > -1) {
+        subjects.splice(index, 1);
+        delete times[sub];
+        delete goals[sub];
+        saveData();
+        updateSubjectSelect();
+        updateStats();
+        renderGoals();
+      }
+    }
+
+    function updateDday() {
+      const dateStr = document.getElementById('ddayInput').value;
+      if (dateStr) {
+        localStorage.setItem('dday', dateStr);
+        calculateDday(dateStr);
+      }
+    }
+
+    function calculateDday(dateStr) {
+      const today = new Date();
+      const target = new Date(dateStr);
+      const diff = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
+      document.getElementById('ddayCount').textContent = diff >= 0 ? diff + '일' : '종료됨';
+    }
+
+    function toggleFocusMode(on) {
+      const overlay = document.getElementById('focusOverlay');
+      if (on) {
+        overlay.style.display = 'flex';
+        document.getElementById('focusSubject').textContent = document.getElementById('subjectSelect').value;
+        updateTimerDisplay(0, 'focusTimer');
+        if (!timerInterval) startTimer();
+      } else {
+        overlay.style.display = 'none';
+      }
+    }
+
+    document.getElementById('ddayInput').addEventListener('change', updateDday);
+
+    if (dday) {
+      document.getElementById('ddayInput').value = dday;
+      calculateDday(dday);
+    }
+
+    updateSubjectSelect();
+    updateStats();
+    renderGoals();
+  </script>
+</body>
+</html>
